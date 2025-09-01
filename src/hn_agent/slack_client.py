@@ -249,10 +249,9 @@ class SlackClient:
             }
         })
         
-        # Summary info context
-        context_elements = [
+        # Summary info context - first line
+        context_line1 = [
             f"📊 {summary.story_count} stories",
-            f"🏷️ {', '.join(summary.topics[:3])}{'...' if len(summary.topics) > 3 else ''}",
             f"⏰ {summary.generated_at.strftime('%H:%M %Z')}"
         ]
         
@@ -261,7 +260,18 @@ class SlackClient:
             "elements": [
                 {
                     "type": "mrkdwn",
-                    "text": " • ".join(context_elements)
+                    "text": " • ".join(context_line1)
+                }
+            ]
+        })
+        
+        # Topics on separate line
+        blocks.append({
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": f"🏷️ {', '.join(summary.topics)}"
                 }
             ]
         })
