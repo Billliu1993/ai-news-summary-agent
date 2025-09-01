@@ -38,6 +38,7 @@ def mock_settings() -> HNAgentSettings:
         summary_max_stories=15,
         dry_run=True,
         environment="development",
+        openai_model="gpt-4o",  # Use gpt-4o for testing to avoid GPT-5 API
     )
 
 

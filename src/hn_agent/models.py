@@ -3,7 +3,7 @@
 from datetime import datetime
 from enum import Enum
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class StoryType(str, Enum):
@@ -59,7 +59,8 @@ class Story(HNItem):
     descendants: int = Field(default=0, description="Number of comments")
     kids: list[int] = Field(default_factory=list, description="Comment IDs")
 
-    @validator("title")
+    @field_validator("title")
+    @classmethod
     def title_must_not_be_empty(cls, v):
         if not v or not v.strip():
             raise ValueError("Title cannot be empty")
@@ -107,13 +108,15 @@ class Summary(BaseModel):
     generated_at: datetime = Field(default_factory=datetime.now)
     total_score: int = 0
 
-    @validator("content")
+    @field_validator("content")
+    @classmethod
     def content_must_not_be_empty(cls, v):
         if not v or not v.strip():
             raise ValueError("Summary content cannot be empty")
         return v.strip()
 
-    @validator("topics")
+    @field_validator("topics")
+    @classmethod
     def topics_must_not_be_empty(cls, v):
         if not v:
             raise ValueError("At least one topic is required")
@@ -133,7 +136,8 @@ class SlackMessage(BaseModel):
     username: str | None = "HN Bot"
     icon_emoji: str | None = ":newspaper:"
 
-    @validator("text")
+    @field_validator("text")
+    @classmethod
     def text_must_not_be_empty(cls, v):
         if not v or not v.strip():
             raise ValueError("Message text cannot be empty")

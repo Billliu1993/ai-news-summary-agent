@@ -285,15 +285,21 @@ class TestHackerNewsClient:
         """Test retrieval of recent stories."""
         story_ids = [1, 2, 3, 4, 5]
 
-        # Create stories with different ages
+        # Create stories with different ages (using current time for realistic testing)
+        import time
+
+        current_time = int(time.time())
+
         recent_stories = [
-            create_story_with_overrides(id=1, time=1704067200),  # Recent
+            create_story_with_overrides(id=1, time=current_time - 3600),  # 1 hour ago
             create_story_with_overrides(
-                id=2, time=1704063600
-            ),  # Older but within limit
+                id=2, time=current_time - 7200
+            ),  # 2 hours ago (within 24h limit)
         ]
         old_stories = [
-            create_story_with_overrides(id=3, time=1704000000),  # Too old
+            create_story_with_overrides(
+                id=3, time=current_time - 86400 - 3600
+            ),  # 25 hours ago (too old)
         ]
 
         all_stories = recent_stories + old_stories
@@ -397,9 +403,11 @@ class TestHackerNewsClient:
     @pytest.mark.asyncio
     async def test_get_story_comments_with_failures(self, client, sample_story):
         """Test comment retrieval with some failures."""
+        # Use the actual comment IDs from sample_story.kids
+        # sample_story has kids=[38123457, 38123458, 38123459]
         valid_comment = Comment(
             by="user1",
-            id=1,
+            id=38123457,  # Match the first kid ID
             parent=sample_story.id,
             text="Valid comment",
             time=1704067200,
@@ -411,11 +419,11 @@ class TestHackerNewsClient:
 
         # Mock get_comment to return mixed results
         async def mock_get_comment(comment_id):
-            if comment_id == 1:
+            if comment_id == 38123457:  # First kid - valid comment
                 return valid_comment
-            elif comment_id == 2:
+            elif comment_id == 38123458:  # Second kid - API error
                 raise Exception("API Error")
-            else:  # comment_id == 3
+            else:  # comment_id == 38123459 - third kid - not found
                 return None
 
         with patch.object(client, "get_comment") as mock_get_comment_patch:

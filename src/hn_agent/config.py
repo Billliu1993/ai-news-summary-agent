@@ -160,7 +160,14 @@ class HNAgentSettings(BaseSettings):
     @classmethod
     def validate_openai_model(cls, v: str) -> str:
         """Validate OpenAI model name."""
-        valid_models = {"gpt-5-nano", "gpt-5-mini", "gpt-5"}
+        valid_models = {
+            "gpt-5-nano",
+            "gpt-5-mini",
+            "gpt-5",
+            "gpt-4o",
+            "gpt-4o-mini",
+            "gpt-4-turbo",
+        }
         if v not in valid_models:
             raise ValueError(f"Model must be one of: {', '.join(valid_models)}")
         return v

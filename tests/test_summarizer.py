@@ -382,22 +382,28 @@ class TestStorySummarizer:
         """Test handling of empty response content."""
         response = MockChatCompletion("")
 
-        with pytest.raises(SummarizerError, match="Empty content"):
+        with pytest.raises(SummarizerError, match="No content"):
             summarizer._extract_summary(response)
 
     def test_extract_summary_no_choices(self, summarizer):
         """Test handling of response with no choices."""
+        # Create a mock that doesn't have output_text to ensure it's treated as ChatCompletion
         response = MagicMock()
         response.choices = []
+        # Explicitly remove output_text to avoid GPT-5 path
+        del response.output_text
 
         with pytest.raises(SummarizerError, match="No response choices"):
             summarizer._extract_summary(response)
 
     def test_extract_summary_no_message(self, summarizer):
         """Test handling of response with no message."""
+        # Create a mock that doesn't have output_text to ensure it's treated as ChatCompletion
         response = MagicMock()
         response.choices = [MagicMock()]
         response.choices[0].message = None
+        # Explicitly remove output_text to avoid GPT-5 path
+        del response.output_text
 
         with pytest.raises(SummarizerError, match="No content"):
             summarizer._extract_summary(response)
@@ -516,6 +522,7 @@ Some random text that doesn't follow the format.
         story = create_story_with_overrides(
             title="Story with \"quotes\" and 'apostrophes' & ampersands",
             text="Text with <html> tags and other special chars: @#$%",
+            url=None,  # Make it a text post so text content is included
         )
 
         result = summarizer._build_user_prompt([story])

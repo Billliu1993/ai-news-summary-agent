@@ -183,13 +183,19 @@ class TestHackerNewsDigestIntegration:
             return [story["id"] for story in mock_stories_data[:limit]]
 
         async def mock_get_recent_stories(limit, max_age_hours):
-            # Filter by age (stories after 1704060000 are recent)
-            recent_cutoff = 1704060000
-            recent_stories = [
-                Story(**story)
-                for story in mock_stories_data
-                if story["time"] > recent_cutoff
-            ]
+            # Use current time for realistic testing (make stories recent)
+            import time
+
+            current_time = int(time.time())
+
+            # Create recent stories by adjusting timestamps
+            recent_stories = []
+            for i, story_data in enumerate(mock_stories_data):
+                story_copy = story_data.copy()
+                # Make stories 1-6 hours old (well within 24h limit)
+                story_copy["time"] = current_time - (3600 * (i + 1))
+                recent_stories.append(Story(**story_copy))
+
             return recent_stories[:limit]
 
         digest.hn_client.get_top_stories = AsyncMock(side_effect=mock_get_top_stories)
@@ -320,12 +326,17 @@ class TestHackerNewsDigestIntegration:
         """Test pipeline when topic filtering removes all stories."""
 
         async with HackerNewsDigest(integration_settings) as digest:
-            # Create stories that don't match any topics
+            # Create stories that don't match any topics but have recent timestamps
+            import time
+
+            current_time = int(time.time())
+
             off_topic_stories = [
                 create_story_with_overrides(
                     id=i,
                     title=f"Unrelated story about cooking recipe {i}",
                     score=50,  # Good score but off-topic
+                    time=current_time - (3600 * (i + 1)),  # 1-5 hours ago
                 )
                 for i in range(5)
             ]

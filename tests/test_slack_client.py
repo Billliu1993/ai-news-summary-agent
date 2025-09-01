@@ -24,6 +24,17 @@ class TestSlackClient:
         return SlackClient(mock_settings)
 
     @pytest.fixture
+    def non_dry_run_client(self, mock_settings):
+        """Create Slack client with dry_run disabled for HTTP testing."""
+        # Create a copy of settings with dry_run=False
+        settings_dict = mock_settings.model_dump()
+        settings_dict["dry_run"] = False
+        from src.hn_agent.config import HNAgentSettings
+
+        non_dry_run_settings = HNAgentSettings(**settings_dict)
+        return SlackClient(non_dry_run_settings)
+
+    @pytest.fixture
     def mock_http_response(self):
         """Mock successful HTTP response."""
         response = MagicMock(spec=httpx.Response)
@@ -101,13 +112,15 @@ class TestSlackClient:
 
     @pytest.mark.asyncio
     async def test_send_summary_webhook_error(
-        self, client, sample_summary, sample_stories, mock_error_response
+        self, non_dry_run_client, sample_summary, sample_stories, mock_error_response
     ):
         """Test summary sending with webhook error."""
         with patch("httpx.AsyncClient.post") as mock_post:
             mock_post.return_value = mock_error_response
 
-            result = await client.send_summary(sample_summary, sample_stories)
+            result = await non_dry_run_client.send_summary(
+                sample_summary, sample_stories
+            )
 
             assert result is False
 
@@ -131,7 +144,9 @@ class TestSlackClient:
             mock_fallback.assert_called_once_with(sample_summary, sample_stories)
 
     @pytest.mark.asyncio
-    async def test_send_error_notification_success(self, client, mock_http_response):
+    async def test_send_error_notification_success(
+        self, non_dry_run_client, mock_http_response
+    ):
         """Test successful error notification."""
         error_msg = "Test error occurred"
         context = {"component": "summarizer", "retry_count": 3}
@@ -139,7 +154,9 @@ class TestSlackClient:
         with patch("httpx.AsyncClient.post") as mock_post:
             mock_post.return_value = mock_http_response
 
-            result = await client.send_error_notification(error_msg, context, "error")
+            result = await non_dry_run_client.send_error_notification(
+                error_msg, context, "error"
+            )
 
             assert result is True
             mock_post.assert_called_once()
@@ -197,10 +214,14 @@ class TestSlackClient:
             content=large_content, story_count=100, topics=["AI"], total_score=5000
         )
 
+        # Build blocks and apply size limits (the full workflow)
         blocks = client._build_summary_blocks(large_summary, sample_stories)
+        limited_blocks = client._ensure_message_size_limits(
+            blocks, large_summary.content
+        )
 
-        # Should not exceed Slack limits
-        assert len(blocks) <= SLACK_MAX_BLOCKS
+        # Should not exceed Slack limits after size enforcement
+        assert len(limited_blocks) <= SLACK_MAX_BLOCKS
 
     def test_get_topic_emojis(self, client):
         """Test topic emoji mapping."""
@@ -584,7 +605,7 @@ class TestSlackClient:
             # Should handle the long content gracefully
 
     @pytest.mark.asyncio
-    async def test_send_blocks_message(self, client, mock_http_response):
+    async def test_send_blocks_message(self, non_dry_run_client, mock_http_response):
         """Test sending message with blocks."""
         text = "Fallback text"
         blocks = [{"type": "section", "text": {"type": "mrkdwn", "text": "Test block"}}]
@@ -592,7 +613,7 @@ class TestSlackClient:
         with patch("httpx.AsyncClient.post") as mock_post:
             mock_post.return_value = mock_http_response
 
-            result = await client._send_blocks_message(text, blocks)
+            result = await non_dry_run_client._send_blocks_message(text, blocks)
 
             assert result is True
 
