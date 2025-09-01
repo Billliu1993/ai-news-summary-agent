@@ -2,16 +2,15 @@
 
 import asyncio
 import time
-from typing import List, Optional
+from typing import Any
 
 import openai
+import structlog
 from openai import AsyncOpenAI
 from openai.types.chat import ChatCompletion
-from typing import Any
-import structlog
 
-from .models import Story
 from .config import HNAgentSettings
+from .models import Story
 
 logger = structlog.get_logger(__name__)
 
@@ -25,7 +24,7 @@ class SummarizerError(Exception):
 class RateLimitError(SummarizerError):
     """Rate limit exceeded error."""
 
-    def __init__(self, message: str, retry_after: Optional[float] = None):
+    def __init__(self, message: str, retry_after: float | None = None):
         super().__init__(message)
         self.retry_after = retry_after
 
@@ -62,7 +61,7 @@ class StorySummarizer:
         )
 
     async def summarize_stories(
-        self, stories: List[Story], topics: List[str], max_stories: Optional[int] = None
+        self, stories: list[Story], topics: list[str], max_stories: int | None = None
     ) -> str:
         """Summarize a list of Hacker News stories.
 
@@ -262,7 +261,7 @@ class StorySummarizer:
         except Exception as e:
             raise APIError(f"Unexpected error: {e}") from e
 
-    def _build_system_prompt(self, topics: List[str]) -> str:
+    def _build_system_prompt(self, topics: list[str]) -> str:
         """Build the system prompt for creating summaries.
 
         Args:
@@ -314,7 +313,7 @@ FORMATTING REQUIREMENTS:
 - Focus on creating insightful "What" and "Why" explanations that provide real value to readers
 - Group related stories by topic with appropriate emoji headers"""
 
-    def _build_user_prompt(self, stories: List[Story], topics: List[str] = None) -> str:
+    def _build_user_prompt(self, stories: list[Story], topics: list[str] = None) -> str:
         """Build the user prompt with story data.
 
         Args:
@@ -348,7 +347,7 @@ FORMATTING REQUIREMENTS:
 
             prompt += "\n"
 
-        prompt += f"""Please create a structured summary using the exact format specified in the system prompt.
+        prompt += """Please create a structured summary using the exact format specified in the system prompt.
 
 KEY REMINDERS:
 - Use section headers (🤖 AI/ML, 💻 Programming, etc.) only ONCE per topic, then list all related stories under that header

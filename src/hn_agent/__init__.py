@@ -1,12 +1,12 @@
 """Hacker News AI Summary Agent."""
 
 # Legacy import removed - agent.py was unused
-from .models import Story, StoryType, Summary, Comment, SlackMessage
-from .config import get_config, get_settings, HNAgentSettings
-from .main import HackerNewsDigest, DigestStats, main_digest, run_health_check
+from .config import HNAgentSettings, get_config, get_settings
 from .hn_client import HackerNewsClient
-from .summarizer import StorySummarizer
+from .main import DigestStats, HackerNewsDigest, main_digest, run_health_check
+from .models import Comment, SlackMessage, Story, StoryType, Summary
 from .slack_client import SlackClient
+from .summarizer import StorySummarizer
 
 __version__ = "0.1.0"
 __all__ = [

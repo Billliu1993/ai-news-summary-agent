@@ -1,16 +1,15 @@
 """Slack webhook integration for sending story summaries."""
 
-import asyncio
 import json
-from typing import Dict, Any, Optional, List
 from datetime import datetime
+from typing import Any
 from urllib.parse import urlparse
 
 import httpx
 import structlog
 
-from .models import Story, Summary, SlackMessage
 from .config import HNAgentSettings
+from .models import Story, Summary
 
 logger = structlog.get_logger(__name__)
 
@@ -56,7 +55,7 @@ class SlackClient:
         self.timeout = settings.slack_timeout
 
         # HTTP client (initialized lazily)
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
         logger.info(
             "SlackClient initialized",
@@ -78,7 +77,7 @@ class SlackClient:
             )
         return self._client
 
-    async def send_summary(self, summary: Summary, stories: List[Story]) -> bool:
+    async def send_summary(self, summary: Summary, stories: list[Story]) -> bool:
         """Send a formatted summary to Slack with rich blocks.
 
         Args:
@@ -122,7 +121,7 @@ class SlackClient:
             return await self._send_fallback_summary(summary, stories)
 
     async def send_error_notification(
-        self, error: str, context: Dict[str, Any], severity: str = "error"
+        self, error: str, context: dict[str, Any], severity: str = "error"
     ) -> bool:
         """Send error notification to Slack with formatting.
 
@@ -147,7 +146,7 @@ class SlackClient:
             return False
 
     async def _send_blocks_message(
-        self, text: str, blocks: List[Dict[str, Any]]
+        self, text: str, blocks: list[dict[str, Any]]
     ) -> bool:
         """Send message with blocks to Slack webhook.
 
@@ -169,7 +168,7 @@ class SlackClient:
 
         return await self._send_webhook(payload)
 
-    async def _send_webhook(self, payload: Dict[str, Any]) -> bool:
+    async def _send_webhook(self, payload: dict[str, Any]) -> bool:
         """Send payload to Slack webhook with error handling.
 
         Args:
@@ -220,8 +219,8 @@ class SlackClient:
             raise WebhookError(f"Request failed: {e}")
 
     def _build_summary_blocks(
-        self, summary: Summary, stories: List[Story]
-    ) -> List[Dict[str, Any]]:
+        self, summary: Summary, stories: list[Story]
+    ) -> list[dict[str, Any]]:
         """Build rich Slack blocks for summary message.
 
         Args:
@@ -289,7 +288,7 @@ class SlackClient:
 
         return blocks
 
-    def _build_story_cards(self, stories: List[Story]) -> List[Dict[str, Any]]:
+    def _build_story_cards(self, stories: list[Story]) -> list[dict[str, Any]]:
         """Build story cards with clickable links.
 
         Args:
@@ -351,8 +350,8 @@ class SlackClient:
         return blocks
 
     def _build_error_blocks(
-        self, error: str, context: Dict[str, Any], severity: str
-    ) -> List[Dict[str, Any]]:
+        self, error: str, context: dict[str, Any], severity: str
+    ) -> list[dict[str, Any]]:
         """Build error notification blocks.
 
         Args:
@@ -418,7 +417,7 @@ class SlackClient:
 
         return blocks
 
-    def _get_topic_emojis(self, topics: List[str]) -> List[str]:
+    def _get_topic_emojis(self, topics: list[str]) -> list[str]:
         """Get emojis for topics.
 
         Args:
@@ -475,8 +474,8 @@ class SlackClient:
             return f"https://news.ycombinator.com/item?id={story.id}"
 
     def _ensure_message_size_limits(
-        self, blocks: List[Dict[str, Any]], summary_content: str
-    ) -> List[Dict[str, Any]]:
+        self, blocks: list[dict[str, Any]], summary_content: str
+    ) -> list[dict[str, Any]]:
         """Ensure message fits within Slack limits.
 
         Args:
@@ -515,7 +514,7 @@ class SlackClient:
 
         return truncated_blocks
 
-    def _parse_summary_sections(self, content: str) -> List[List[Dict[str, Any]]]:
+    def _parse_summary_sections(self, content: str) -> list[list[dict[str, Any]]]:
         """Parse summary content into structured Slack blocks by sections.
 
         Args:
@@ -576,8 +575,8 @@ class SlackClient:
         return any(line.startswith(pattern) for pattern in section_patterns)
 
     def _build_section_blocks(
-        self, title: str, content: List[str]
-    ) -> List[Dict[str, Any]]:
+        self, title: str, content: list[str]
+    ) -> list[dict[str, Any]]:
         """Build blocks for a summary section.
 
         Args:
@@ -607,7 +606,7 @@ class SlackClient:
 
         return blocks
 
-    def _parse_story_items(self, content_lines: List[str]) -> List[Dict[str, Any]]:
+    def _parse_story_items(self, content_lines: list[str]) -> list[dict[str, Any]]:
         """Parse structured story content into individual story blocks.
 
         Each story follows this format:
@@ -665,7 +664,7 @@ class SlackClient:
 
         return blocks
 
-    def _is_complete_story(self, story: Dict[str, str]) -> bool:
+    def _is_complete_story(self, story: dict[str, str]) -> bool:
         """Check if a story has all required fields.
 
         Args:
@@ -677,8 +676,8 @@ class SlackClient:
         return story and story.get("title") and (story.get("what") or story.get("why"))
 
     def _create_structured_story_block(
-        self, story: Dict[str, str]
-    ) -> Optional[Dict[str, Any]]:
+        self, story: dict[str, str]
+    ) -> dict[str, Any] | None:
         """Create a formatted Slack block for a structured story.
 
         Args:
@@ -723,7 +722,7 @@ class SlackClient:
 
         return {"type": "section", "text": {"type": "mrkdwn", "text": full_text}}
 
-    def _create_story_block(self, story_lines: List[str]) -> Optional[Dict[str, Any]]:
+    def _create_story_block(self, story_lines: list[str]) -> dict[str, Any] | None:
         """Create a formatted block for a single story.
 
         Args:
@@ -761,7 +760,7 @@ class SlackClient:
 
         return {"type": "section", "text": {"type": "mrkdwn", "text": full_text}}
 
-    def _chunk_text(self, text: str, max_length: int) -> List[str]:
+    def _chunk_text(self, text: str, max_length: int) -> list[str]:
         """Split text into chunks that fit Slack limits.
 
         Args:
@@ -799,7 +798,7 @@ class SlackClient:
 
         return chunks
 
-    def _create_fallback_text(self, summary: Summary, stories: List[Story]) -> str:
+    def _create_fallback_text(self, summary: Summary, stories: list[Story]) -> str:
         """Create plain text fallback for clients that don't support blocks.
 
         Args:
@@ -819,7 +818,7 @@ class SlackClient:
         return f"{header}\n\n{content}"
 
     async def _send_fallback_summary(
-        self, summary: Summary, stories: List[Story]
+        self, summary: Summary, stories: list[Story]
     ) -> bool:
         """Send simple fallback message when rich formatting fails.
 

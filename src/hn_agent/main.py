@@ -8,15 +8,15 @@ import sys
 import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Optional, Dict, Any, Tuple
+from typing import Any
 
 import structlog
 
-from .config import get_settings, HNAgentSettings
+from .config import HNAgentSettings, get_settings
 from .hn_client import HackerNewsClient
 from .models import Story, Summary
-from .summarizer import StorySummarizer
 from .slack_client import SlackClient
+from .summarizer import StorySummarizer
 
 # Configure structured logging
 structlog.configure(
@@ -51,7 +51,7 @@ class DigestStats:
     after_hotness_filter: int
     summarized_count: int
     execution_time: float
-    errors: List[str]
+    errors: list[str]
 
     @property
     def success_rate(self) -> float:
@@ -60,7 +60,7 @@ class DigestStats:
             return 0.0
         return (self.summarized_count / self.total_fetched) * 100
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for logging/output."""
         return {
             "total_fetched": self.total_fetched,
@@ -118,7 +118,7 @@ class HackerNewsDigest:
             summary_max_stories=settings.summary_max_stories,
         )
 
-    async def generate_digest(self) -> Tuple[Optional[Summary], DigestStats]:
+    async def generate_digest(self) -> tuple[Summary | None, DigestStats]:
         """Generate complete digest with all pipeline stages.
 
         Returns:
@@ -201,7 +201,7 @@ class HackerNewsDigest:
             )
             return None, self._finalize_stats(start_time)
 
-    async def _fetch_stories(self) -> List[Story]:
+    async def _fetch_stories(self) -> list[Story]:
         """Fetch stories from Hacker News API.
 
         Returns:
@@ -229,7 +229,7 @@ class HackerNewsDigest:
             logger.error("Failed to fetch stories", error=str(e))
             raise
 
-    def _apply_basic_filters(self, stories: List[Story]) -> List[Story]:
+    def _apply_basic_filters(self, stories: list[Story]) -> list[Story]:
         """Apply basic filters (validity, score, age).
 
         Args:
@@ -272,7 +272,7 @@ class HackerNewsDigest:
 
         return filtered
 
-    def _apply_topic_filter(self, stories: List[Story]) -> List[Story]:
+    def _apply_topic_filter(self, stories: list[Story]) -> list[Story]:
         """Apply topic-based filtering.
 
         Args:
@@ -311,7 +311,7 @@ class HackerNewsDigest:
 
         return filtered_stories
 
-    def _get_topic_matches(self, story: Story) -> List[str]:
+    def _get_topic_matches(self, story: Story) -> list[str]:
         """Get list of topics that match a story with enhanced filtering.
 
         Args:
@@ -486,7 +486,7 @@ class HackerNewsDigest:
 
         return True
 
-    async def _apply_llm_relevance_filter(self, stories: List[Story]) -> List[Story]:
+    async def _apply_llm_relevance_filter(self, stories: list[Story]) -> list[Story]:
         """Use LLM to check story relevance to selected topics.
 
         Args:
@@ -523,8 +523,8 @@ class HackerNewsDigest:
         return relevant_stories
 
     async def _check_batch_relevance(
-        self, stories: List[Story], topics_str: str
-    ) -> List[Story]:
+        self, stories: list[Story], topics_str: str
+    ) -> list[Story]:
         """Check a batch of stories for relevance using LLM.
 
         Args:
@@ -594,7 +594,7 @@ Respond with exactly one word per story: "YES" or "NO"."""
             # Fallback: return all stories if LLM check fails
             return stories
 
-    def _apply_hotness_ranking(self, stories: List[Story]) -> List[Story]:
+    def _apply_hotness_ranking(self, stories: list[Story]) -> list[Story]:
         """Apply hotness scoring and rank stories by hotness.
 
         Args:
@@ -705,7 +705,7 @@ Respond with exactly one word per story: "YES" or "NO"."""
         }
         return type_factors.get(story.type.value, 1.0)
 
-    async def _generate_summary(self, stories: List[Story]) -> Optional[Summary]:
+    async def _generate_summary(self, stories: list[Story]) -> Summary | None:
         """Generate AI summary of stories.
 
         Args:
@@ -742,7 +742,7 @@ Respond with exactly one word per story: "YES" or "NO"."""
             logger.error("Failed to generate summary", error=str(e))
             return None
 
-    async def _send_to_slack(self, summary: Summary, stories: List[Story]) -> bool:
+    async def _send_to_slack(self, summary: Summary, stories: list[Story]) -> bool:
         """Send summary to Slack.
 
         Args:
@@ -806,7 +806,7 @@ Respond with exactly one word per story: "YES" or "NO"."""
 
         return self.stats
 
-    async def health_check(self) -> Dict[str, Any]:
+    async def health_check(self) -> dict[str, Any]:
         """Perform health check on all components.
 
         Returns:

@@ -1,12 +1,9 @@
 """Configuration management for the HN Agent using Pydantic settings."""
 
-import re
 from functools import lru_cache
-from typing import List, Optional, Set
 
-from pydantic import Field, field_validator, HttpUrl
+from pydantic import Field, HttpUrl, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
-
 
 # Default topics configuration
 DEFAULT_TOPICS = [
@@ -176,7 +173,7 @@ class HNAgentSettings(BaseSettings):
             raise ValueError("Slack emoji must be in format :emoji:")
         return v
 
-    def get_effective_topics(self) -> List[str]:
+    def get_effective_topics(self) -> list[str]:
         """Get the effective list of topics based on configuration.
 
         Returns:
@@ -203,7 +200,7 @@ class HNAgentSettings(BaseSettings):
 
         return sorted(list(effective_topics))
 
-    def get_topic_keywords(self) -> Set[str]:
+    def get_topic_keywords(self) -> set[str]:
         """Get all topic keywords for filtering (lowercased for matching)."""
         topics = self.get_effective_topics()
         return {topic.lower() for topic in topics}
@@ -251,7 +248,7 @@ class HNAgentSettings(BaseSettings):
         )
 
 
-@lru_cache()
+@lru_cache
 def get_settings() -> HNAgentSettings:
     """Get cached application settings.
 

@@ -1,14 +1,12 @@
 """Hacker News API client for fetching stories."""
 
 import asyncio
-from typing import List, Optional
-from datetime import datetime
 
 import httpx
 import structlog
 from pydantic import ValidationError
 
-from .models import Story, Comment, StoryType
+from .models import Comment, Story, StoryType
 
 logger = structlog.get_logger(__name__)
 
@@ -57,7 +55,7 @@ class HackerNewsClient:
         self._semaphore = asyncio.Semaphore(max_concurrent_requests)
 
         # HTTP client (initialized lazily)
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: httpx.AsyncClient | None = None
 
         logger.info("HN client initialized", base_url=base_url, timeout=timeout)
 
@@ -113,7 +111,7 @@ class HackerNewsClient:
             except httpx.RequestError as e:
                 raise HNAPIError(f"Request failed for {endpoint}: {e}")
 
-    async def get_top_stories(self, limit: int = 30) -> List[int]:
+    async def get_top_stories(self, limit: int = 30) -> list[int]:
         """Fetch top story IDs from HN API.
 
         Args:
@@ -138,7 +136,7 @@ class HackerNewsClient:
             logger.error("Failed to fetch top stories", error=str(e))
             raise HNAPIError(f"Failed to fetch top stories: {e}") from e
 
-    async def get_item(self, item_id: int) -> Optional[dict]:
+    async def get_item(self, item_id: int) -> dict | None:
         """Fetch a single item (story/comment) by ID.
 
         Args:
@@ -158,7 +156,7 @@ class HackerNewsClient:
             logger.error("Failed to fetch item", item_id=item_id, error=str(e))
             return None
 
-    async def get_story(self, story_id: int) -> Optional[Story]:
+    async def get_story(self, story_id: int) -> Story | None:
         """Fetch a single story by ID and parse into Story model.
 
         Args:
@@ -194,7 +192,7 @@ class HackerNewsClient:
             logger.error("Failed to fetch story", story_id=story_id, error=str(e))
             return None
 
-    async def get_stories_batch(self, story_ids: List[int]) -> List[Story]:
+    async def get_stories_batch(self, story_ids: list[int]) -> list[Story]:
         """Fetch multiple stories concurrently.
 
         Args:
@@ -235,7 +233,7 @@ class HackerNewsClient:
 
     async def get_recent_stories(
         self, limit: int = 30, max_age_hours: float = 24.0
-    ) -> List[Story]:
+    ) -> list[Story]:
         """Fetch recent stories (within specified age).
 
         Args:
@@ -268,7 +266,7 @@ class HackerNewsClient:
 
         return recent_stories
 
-    async def get_comment(self, comment_id: int) -> Optional[Comment]:
+    async def get_comment(self, comment_id: int) -> Comment | None:
         """Fetch a single comment by ID.
 
         Args:
@@ -303,7 +301,7 @@ class HackerNewsClient:
 
     async def get_story_comments(
         self, story: Story, max_comments: int = 10
-    ) -> List[Comment]:
+    ) -> list[Comment]:
         """Fetch top-level comments for a story.
 
         Args:

@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from enum import Enum
-from typing import List, Optional
 
 from pydantic import BaseModel, Field, validator
 
@@ -23,7 +22,7 @@ class HNItem(BaseModel):
     """Base model for Hacker News items."""
 
     id: int
-    by: Optional[str] = None
+    by: str | None = None
     time: int = Field(..., description="Unix timestamp")
     type: StoryType
     dead: bool = False
@@ -54,11 +53,11 @@ class Story(HNItem):
     """Represents a Hacker News story."""
 
     title: str
-    url: Optional[str] = None
-    text: Optional[str] = None
+    url: str | None = None
+    text: str | None = None
     score: int = 0
     descendants: int = Field(default=0, description="Number of comments")
-    kids: List[int] = Field(default_factory=list, description="Comment IDs")
+    kids: list[int] = Field(default_factory=list, description="Comment IDs")
 
     @validator("title")
     def title_must_not_be_empty(cls, v):
@@ -89,9 +88,9 @@ class Story(HNItem):
 class Comment(HNItem):
     """Represents a Hacker News comment."""
 
-    text: Optional[str] = None
+    text: str | None = None
     parent: int = Field(..., description="Parent item ID")
-    kids: List[int] = Field(default_factory=list, description="Reply IDs")
+    kids: list[int] = Field(default_factory=list, description="Reply IDs")
 
     @property
     def has_text(self) -> bool:
@@ -104,7 +103,7 @@ class Summary(BaseModel):
 
     content: str
     story_count: int = Field(..., gt=0)
-    topics: List[str]
+    topics: list[str]
     generated_at: datetime = Field(default_factory=datetime.now)
     total_score: int = 0
 
@@ -130,9 +129,9 @@ class SlackMessage(BaseModel):
     """Represents a message to send to Slack."""
 
     text: str
-    blocks: Optional[List[dict]] = None
-    username: Optional[str] = "HN Bot"
-    icon_emoji: Optional[str] = ":newspaper:"
+    blocks: list[dict] | None = None
+    username: str | None = "HN Bot"
+    icon_emoji: str | None = ":newspaper:"
 
     @validator("text")
     def text_must_not_be_empty(cls, v):
