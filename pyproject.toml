@@ -1,0 +1,49 @@
+[project]
+name = "ai-news-summary-agent"
+version = "0.1.0"
+description = "AI-powered agent to summarize selected topics from Hacker News"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.25.0",
+    "openai>=1.0.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "structlog>=23.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0.0",
+    "pytest-asyncio>=0.21.0",
+    "black>=23.0.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0.0",
+]
+
+[project.scripts]
+hn-agent = "hn_agent.main:main"
+hn-digest = "hn_agent.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hn_agent"]
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+select = ["E", "F", "I", "N", "W", "UP"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
